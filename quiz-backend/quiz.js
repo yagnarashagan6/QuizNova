@@ -8,14 +8,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// CORS setup to allow only your frontend
+// ✅ CORS setup to allow frontend access from Vercel
 app.use(
   cors({
-    origin: "https://quiz-nova-zeta.vercel.app", // ✅ your frontend domain
-    methods: ["POST"],
-    credentials: true,
+    origin: "https://quiz-nova-zeta.vercel.app", // ✅ your frontend URL
+    methods: ["POST", "GET", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.use(express.json());
 
 app.post("/api/generate-quiz", async (req, res) => {
@@ -23,18 +24,18 @@ app.post("/api/generate-quiz", async (req, res) => {
 
   const prompt = `Generate exactly ${count} multiple choice quiz questions on the topic "${topic}". Each question must strictly follow this format:
 - A question text (clear, concise, and relevant to the topic)
-- Exactly four options, each prefixed with "A)", "B)", "C)", or "D)"
+- Exactly four options, each prefixed with "A)", "B)", "C)", or "D)" (e.g., "A) Option 1")
 - One correct answer as the full option text, including the letter prefix (e.g., "B) Option 2")
 - Ensure options are unique and the correct answer matches one of the options exactly
-
-Return the response in valid JSON format, with no additional text or code block markers. Like this:
+Return the response in valid JSON format, with no additional text or code block markers, like this:
 [
   {
     "text": "Sample question?",
     "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
     "correctAnswer": "B) Option 2"
   }
-]`;
+]
+Do not include code block markers (e.g., \`\`\`), comments, or any text outside the JSON array. Ensure all options have the correct prefix and the correctAnswer is the full text of one option.`;
 
   try {
     const response = await fetch(
@@ -44,7 +45,7 @@ Return the response in valid JSON format, with no additional text or code block 
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "HTTP-Referer": "https://quiz-nova-zeta.vercel.app", // ✅ frontend URL
+          "HTTP-Referer": "https://quiz-nova-zeta.vercel.app", // ✅ frontend origin
           "X-Title": "QuizNova",
         },
         body: JSON.stringify({
@@ -55,7 +56,10 @@ Return the response in valid JSON format, with no additional text or code block 
               content:
                 "You are an educational quiz generator that strictly follows the provided JSON format.",
             },
-            { role: "user", content: prompt },
+            {
+              role: "user",
+              content: prompt,
+            },
           ],
           temperature: 0.5,
         }),
@@ -66,7 +70,6 @@ Return the response in valid JSON format, with no additional text or code block 
     const content = data.choices?.[0]?.message?.content;
 
     if (!content || typeof content !== "string") {
-      console.error("AI response missing content:", data);
       return res.status(500).json({
         error: "AI did not return quiz content. Please try again later.",
         raw: data,
@@ -84,7 +87,6 @@ Return the response in valid JSON format, with no additional text or code block 
     const firstBracket = cleaned.indexOf("[");
     const lastBracket = cleaned.lastIndexOf("]");
     if (firstBracket === -1 || lastBracket === -1) {
-      console.error("Invalid JSON structure:", cleaned);
       return res
         .status(500)
         .json({ error: "AI returned invalid JSON structure", raw: cleaned });
@@ -96,7 +98,6 @@ Return the response in valid JSON format, with no additional text or code block 
     try {
       parsed = JSON.parse(cleaned);
     } catch (parseErr) {
-      console.error("Failed to parse AI response:", cleaned);
       return res
         .status(500)
         .json({ error: "AI returned invalid JSON", raw: cleaned });
