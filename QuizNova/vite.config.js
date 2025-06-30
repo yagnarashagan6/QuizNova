@@ -5,6 +5,12 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: "dist",
-    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: "./index.html",
+      },
+    },
   },
+  base: "/", // Add this for Vercel
+  publicDir: "public", // Ensure this exists
 });
