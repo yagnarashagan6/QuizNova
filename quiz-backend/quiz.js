@@ -25,20 +25,25 @@ app.use(express.json());
 app.post("/api/generate-quiz", async (req, res) => {
   const { topic, count } = req.body;
 
+  console.log("📩 Incoming Request:", { topic, count });
+  console.log("🔑 API Key Present:", !!process.env.OPENROUTER_API_KEY);
+
+  if (!process.env.OPENROUTER_API_KEY) {
+    return res.status(500).json({ error: "OpenRouter API key is missing." });
+  }
+
   const prompt = `Generate exactly ${count} multiple choice quiz questions on the topic "${topic}". Each question must strictly follow this format:
 - A question text (clear, concise, and relevant to the topic)
-- Exactly four options, each prefixed with "A)", "B)", "C)", or "D)" (e.g., "A) Option 1")
-- One correct answer as the full option text, including the letter prefix (e.g., "B) Option 2")
-- Ensure options are unique and the correct answer matches one of the options exactly
-Return the response in valid JSON format, with no additional text or code block markers, like this:
+- Exactly four options, each prefixed with "A)", "B)", "C)", or "D)"
+- One correct answer as the full option text, including the letter prefix
+Return the response in valid JSON format like this:
 [
   {
     "text": "Sample question?",
     "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
     "correctAnswer": "B) Option 2"
   }
-]
-Do not include code block markers (e.g., \`\`\`), comments, or any text outside the JSON array. Ensure all options have the correct prefix and the correctAnswer is the full text of one option.`;
+]`;
 
   try {
     const response = await fetch(
@@ -70,6 +75,8 @@ Do not include code block markers (e.g., \`\`\`), comments, or any text outside 
     );
 
     const data = await response.json();
+    console.log("🧠 OpenRouter Raw Response:", JSON.stringify(data, null, 2));
+
     const content = data.choices?.[0]?.message?.content;
 
     if (!content || typeof content !== "string") {
@@ -149,10 +156,12 @@ Do not include code block markers (e.g., \`\`\`), comments, or any text outside 
 
     res.json({ questions: transformedQuestions });
   } catch (err) {
-    console.error("Quiz generation error:", err.message);
-    res
-      .status(500)
-      .json({ error: "Failed to generate quiz", message: err.message });
+    console.error("🔥 Quiz generation error:", err);
+    res.status(500).json({
+      error: "Failed to generate quiz",
+      message: err.message,
+      stack: err.stack,
+    });
   }
 });
 
