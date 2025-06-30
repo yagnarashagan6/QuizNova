@@ -10,7 +10,11 @@ const PORT = process.env.PORT || 8080;
 
 app.use(
   cors({
-    origin: ["https://quiz-nova-zeta.vercel.app", "http://localhost:3000"],
+    origin: [
+      "https://quiz-nova-zeta.vercel.app",
+      "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
+      "http://localhost:3000",
+    ],
     methods: ["POST", "GET", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })

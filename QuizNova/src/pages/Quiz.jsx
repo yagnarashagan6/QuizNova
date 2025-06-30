@@ -48,8 +48,12 @@ const Quiz = () => {
     setIsLoading(true);
     setError("");
     try {
+      console.log(
+        "Fetching from:",
+        `${process.env.REACT_APP_API_URL}/api/generate-quiz`
+      );
       const res = await fetch(
-        "https://quiznova-cf1r.onrender.com/api/generate-quiz",
+        `${process.env.REACT_APP_API_URL}/api/generate-quiz`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
