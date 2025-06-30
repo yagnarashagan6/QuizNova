@@ -8,10 +8,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// ✅ CORS setup to allow frontend access from Vercel
 app.use(
   cors({
-    origin: "https://quiz-nova-zeta.vercel.app", // ✅ your frontend URL
+    origin: ["https://quiz-nova-zeta.vercel.app", "http://localhost:3000"],
     methods: ["POST", "GET", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -45,7 +44,7 @@ Do not include code block markers (e.g., \`\`\`), comments, or any text outside 
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "HTTP-Referer": "https://quiz-nova-zeta.vercel.app", // ✅ frontend origin
+          "HTTP-Referer": "https://quiz-nova-zeta.vercel.app",
           "X-Title": "QuizNova",
         },
         body: JSON.stringify({

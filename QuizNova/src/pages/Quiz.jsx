@@ -3,8 +3,8 @@ import "./Quiz.css";
 
 const Quiz = () => {
   const [topic, setTopic] = useState("");
-  const [numQuestions, setNumQuestions] = useState("5"); // Initialize as string
-  const [timerDuration, setTimerDuration] = useState("10"); // Initialize as string
+  const [numQuestions, setNumQuestions] = useState("5");
+  const [timerDuration, setTimerDuration] = useState("10");
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -20,7 +20,7 @@ const Quiz = () => {
 
   useEffect(() => {
     if (quizStarted && !quizCompleted && questions.length > 0) {
-      setTimer(parseInt(timerDuration) || 10); // Fallback to 10 if NaN
+      setTimer(parseInt(timerDuration) || 10);
       setShowCorrect(false);
       timerRef.current = setInterval(() => {
         setTimer((prev) => {
@@ -49,7 +49,7 @@ const Quiz = () => {
     setError("");
     try {
       const res = await fetch(
-        "https://quiznova-backend.onrender.com/api/generate-quiz",
+        "https://quiznova-cf1r.onrender.com/api/generate-quiz",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -72,7 +72,6 @@ const Quiz = () => {
     }
   };
 
-  // Screenshot restriction: blank the page for a moment if PrintScreen is pressed
   useEffect(() => {
     const handlePrintScreen = (e) => {
       if (e.key === "PrintScreen") {
@@ -91,11 +90,9 @@ const Quiz = () => {
     };
   }, []);
 
-  // Change handleOptionSelect: allow changing answer before timer ends, don't stop timer
   const handleOptionSelect = (option) => {
     if (!showCorrect) {
       setSelectedOption(option);
-      // Update or add the answer for this question
       setUserAnswers((prev) => {
         const updated = [...prev];
         const idx = updated.findIndex((ua) => ua.question === currentQuestion);
@@ -109,7 +106,6 @@ const Quiz = () => {
     }
   };
 
-  // In handleNext, compare full option text for scoring
   const handleNext = (isTimeout = false) => {
     if (
       !isTimeout &&
@@ -135,7 +131,7 @@ const Quiz = () => {
     setSelectedOption(null);
     setQuestions([]);
     setUserAnswers([]);
-    setTimer(parseInt(timerDuration) || 10); // Fallback to 10 if NaN
+    setTimer(parseInt(timerDuration) || 10);
   };
 
   if (!quizStarted) {
