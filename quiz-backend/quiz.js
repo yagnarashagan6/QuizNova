@@ -8,106 +8,54 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Log all registered routes for debugging
-app.use((req, res, next) => {
-  console.log(`Request received: ${req.method} ${req.path}`);
-  next();
-});
+// ✅ Add your OpenRouter API key directly here for testing (remove this in production)
+const OPENROUTER_API_KEY =
+  process.env.OPENROUTER_API_KEY || "sk-your-api-key-here"; // ← Insert your real key here temporarily
 
-// CORS configuration
-const allowedOrigins = [
-  "https://quiz-nova-zeta.vercel.app",
-  "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
-  "http://localhost:3000",
-];
+app.use(
+  cors({
+    origin: [
+      "https://quiz-nova-zeta.vercel.app",
+      "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
+      "http://localhost:3000",
+    ],
+    methods: ["POST", "GET", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    console.log("CORS Origin Check:", origin);
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
-};
-
-app.use(cors(corsOptions));
 app.use(express.json());
 
-// Health check endpoint
-app.get("/api/health", (req, res) => {
-  console.log("Health check endpoint hit");
-  res.json({
-    status: "ok",
-    version: "1.0.0",
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// Quiz generation endpoint
 app.post("/api/generate-quiz", async (req, res) => {
-  console.log("Quiz generation request received:", req.body);
-
   const { topic, count } = req.body;
 
-  // Input validation
-  if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
-    console.log("Invalid topic:", topic);
-    return res.status(400).json({
-      error: "Invalid input",
-      message: "Please provide a valid topic for the quiz",
-    });
+  console.log("📩 Request received for topic:", topic, "Count:", count);
+
+  if (!OPENROUTER_API_KEY) {
+    return res.status(500).json({ error: "Missing OpenRouter API key." });
   }
 
-  const questionCount = parseInt(count);
-  if (isNaN(questionCount) || questionCount < 3 || questionCount > 10) {
-    console.log("Invalid question count:", count);
-    return res.status(400).json({
-      error: "Invalid input",
-      message: "Please request between 3 and 10 questions",
-    });
-  }
-
-  if (!process.env.OPENROUTER_API_KEY) {
-    console.log("Missing OpenRouter API key");
-    return res.status(500).json({ error: "Missing OpenRouter API key" });
-  }
-
-  const prompt = `Generate exactly ${questionCount} multiple choice quiz questions on the topic "${topic}". Follow these strict rules:
-1. Each question must have:
-   - A clear question text
-   - Exactly 4 options (A, B, C, D)
-   - One correct answer (must match exactly one option)
-2. Format each question as JSON with:
-   - "text": The question
-   - "options": Array of 4 options (prefix with A), B), etc.)
-   - "correctAnswer": The full correct option text
-3. Return only a valid JSON array with no extra text
-
-Example:
+  const prompt = `Generate exactly ${count} multiple choice quiz questions on the topic "${topic}". Each question must strictly follow this format:
+- A question text
+- Four options prefixed with "A)", "B)", "C)", "D)"
+- One correctAnswer matching an option
+Return ONLY valid JSON like:
 [
   {
-    "text": "What is the capital of France?",
-    "options": ["A) London", "B) Paris", "C) Berlin", "D) Madrid"],
-    "correctAnswer": "B) Paris"
+    "text": "Sample?",
+    "options": ["A) A", "B) B", "C) C", "D) D"],
+    "correctAnswer": "B) B"
   }
-]
-
-Now generate ${questionCount} questions about "${topic}":`;
+]`;
 
   try {
-    console.log("Sending request to OpenRouter API");
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "HTTP-Referer": "https://quiz-nova-zeta.vercel.app",
           "X-Title": "QuizNova",
         },
@@ -117,103 +65,93 @@ Now generate ${questionCount} questions about "${topic}":`;
             {
               role: "system",
               content:
-                "You are a quiz generator. Return only valid JSON arrays with quiz questions in the exact specified format. Do not include any additional text or explanations.",
+                "You are a strict quiz generator that replies only in JSON.",
             },
-            { role: "user", content: prompt },
+            {
+              role: "user",
+              content: prompt,
+            },
           ],
-          temperature: 0.7,
-          response_format: { type: "json_object" },
+          temperature: 0.5,
         }),
-        timeout: 120000,
       }
     );
 
     if (!response.ok) {
-      const errText = await response.text();
-      console.error("OpenRouter API Error:", response.status, errText);
-      throw new Error(`API Error: ${response.status} - ${errText}`);
+      const text = await response.text();
+      console.error("❌ OpenRouter API Error:", text);
+      return res
+        .status(500)
+        .json({ error: "OpenRouter API error", details: text });
     }
 
     const data = await response.json();
-    let content = data.choices?.[0]?.message?.content?.trim();
+    const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
-      console.error("Empty response from OpenRouter API");
-      throw new Error("Empty response from AI");
+      return res
+        .status(500)
+        .json({ error: "No content received from AI.", raw: data });
     }
 
-    let questions;
+    // Clean content from backticks if needed
+    let cleaned = content.trim();
+    if (cleaned.startsWith("```")) {
+      cleaned = cleaned
+        .replace(/^```[a-zA-Z]*\n/, "")
+        .replace(/```$/, "")
+        .trim();
+    }
+
+    const firstBracket = cleaned.indexOf("[");
+    const lastBracket = cleaned.lastIndexOf("]");
+    if (firstBracket === -1 || lastBracket === -1) {
+      return res
+        .status(500)
+        .json({ error: "Invalid JSON format", raw: cleaned });
+    }
+
+    const jsonString = cleaned.substring(firstBracket, lastBracket + 1);
+
+    let parsed;
     try {
-      content = content.replace(/```json\n|\n```/g, "").trim();
-      console.log("Parsed content:", content);
-      questions = JSON.parse(content);
-      if (!Array.isArray(questions)) {
-        throw new Error("Response is not a valid array");
-      }
-    } catch (parseError) {
-      console.error(
-        "JSON parse error:",
-        parseError.message,
-        "Raw content:",
-        content
-      );
-      throw new Error("Failed to parse quiz data");
+      parsed = JSON.parse(jsonString);
+    } catch (e) {
+      return res
+        .status(500)
+        .json({ error: "Failed to parse JSON", raw: jsonString });
     }
 
-    // Validate each question
-    const validated = questions.map((q, i) => {
-      if (!q.text || typeof q.text !== "string") {
-        throw new Error(`Question ${i + 1} missing text`);
+    // Validate & transform
+    const transformed = parsed.map((q, i) => {
+      const { text, options, correctAnswer } = q;
+      if (!text || !options || options.length !== 4 || !correctAnswer) {
+        throw new Error(`Invalid question ${i + 1}`);
       }
-      if (!q.options || !Array.isArray(q.options) || q.options.length !== 4) {
-        throw new Error(`Question ${i + 1} must have exactly 4 options`);
+
+      const formattedOptions = options.map((opt, i) => {
+        const prefix = `${String.fromCharCode(65 + i)}) `;
+        return opt.startsWith(prefix) ? opt : `${prefix}${opt}`;
+      });
+
+      if (!formattedOptions.includes(correctAnswer)) {
+        throw new Error(`Correct answer mismatch in question ${i + 1}`);
       }
-      if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
-        throw new Error(`Question ${i + 1} missing correctAnswer`);
-      }
-      if (!q.options.includes(q.correctAnswer)) {
-        throw new Error(
-          `Question ${i + 1} correctAnswer doesn't match any option`
-        );
-      }
+
       return {
-        text: q.text.trim(),
-        options: q.options.map((opt) => opt.trim()),
-        correctAnswer: q.correctAnswer.trim(),
+        text,
+        options: formattedOptions,
+        correctAnswer,
       };
     });
 
-    if (validated.length !== questionCount) {
-      throw new Error(
-        `Expected ${questionCount} questions, got ${validated.length}`
-      );
-    }
-
-    console.log("Successfully generated quiz:", validated);
-    res.json({ questions: validated });
-  } catch (error) {
-    console.error("Quiz generation error:", error.message);
-    res.status(500).json({
-      error: "Failed to generate quiz",
-      message: error.message,
-      details: process.env.NODE_ENV === "development" ? error.stack : undefined,
-    });
+    res.json({ questions: transformed });
+  } catch (err) {
+    console.error("🔥 Backend Error:", err);
+    res
+      .status(500)
+      .json({ error: "Quiz generation failed", message: err.message });
   }
-});
-
-// 404 Handler
-app.all("*", (req, res) => {
-  console.log("404 hit for path:", req.path);
-  res.status(404).json({ error: "Not Found" });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Express error:", err.message);
-  res.status(500).json({
-    error: "Internal Server Error",
-    message: err.message,
-  });
 });
 
 app.listen(PORT, () => {
