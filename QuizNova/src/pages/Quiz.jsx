@@ -57,7 +57,7 @@ const Quiz = () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000);
     try {
-      const apiUrl = "https://quiz-nova-backend.onrender.com/api/generate-quiz"; // Adjust to your Render backend URL
+      const apiUrl = "https://quiznova-cf1r.onrender.com/api/generate-quiz";
       const res = await fetch(apiUrl, {
         method: "POST",
         headers: {

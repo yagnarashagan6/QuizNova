@@ -8,6 +8,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Log all registered routes for debugging
+app.use((req, res, next) => {
+  console.log(`Request received: ${req.method} ${req.path}`);
+  next();
+});
+
 // CORS configuration
 const allowedOrigins = [
   "https://quiz-nova-zeta.vercel.app",
@@ -17,7 +23,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    console.log("CORS Origin Check:", origin); // Debug log
+    console.log("CORS Origin Check:", origin);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -118,7 +124,7 @@ Now generate ${questionCount} questions about "${topic}":`;
           temperature: 0.7,
           response_format: { type: "json_object" },
         }),
-        timeout: 120000, // 120-second timeout
+        timeout: 120000,
       }
     );
 
@@ -138,9 +144,8 @@ Now generate ${questionCount} questions about "${topic}":`;
 
     let questions;
     try {
-      // Strip markdown and parse JSON
       content = content.replace(/```json\n|\n```/g, "").trim();
-      console.log("Parsed content:", content); // Debug log
+      console.log("Parsed content:", content);
       questions = JSON.parse(content);
       if (!Array.isArray(questions)) {
         throw new Error("Response is not a valid array");
@@ -198,13 +203,13 @@ Now generate ${questionCount} questions about "${topic}":`;
 
 // 404 Handler
 app.all("*", (req, res) => {
-  console.log("404 hit for path:", req.path); // Debug log
+  console.log("404 hit for path:", req.path);
   res.status(404).json({ error: "Not Found" });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("Express error:", err.message); // Debug log E
+  console.error("Express error:", err.message);
   res.status(500).json({
     error: "Internal Server Error",
     message: err.message,
