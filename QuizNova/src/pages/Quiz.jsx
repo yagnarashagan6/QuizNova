@@ -48,11 +48,14 @@ const Quiz = () => {
     setIsLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:8080/api/generate-quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, count: numQ }),
-      });
+      const res = await fetch(
+        "https://quiznova-backend.onrender.com/api/generate-quiz",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, count: numQ }),
+        }
+      );
       const data = await res.json();
       if (!res.ok || !data.questions) {
         setError(data.error || "Failed to generate quiz. Try again.");
