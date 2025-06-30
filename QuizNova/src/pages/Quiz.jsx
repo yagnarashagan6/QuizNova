@@ -39,38 +39,52 @@ const Quiz = () => {
   const handleStartQuiz = async () => {
     const numQ = parseInt(numQuestions);
     const timerD = parseInt(timerDuration);
-    if (!topic || isNaN(numQ) || numQ <= 0 || isNaN(timerD) || timerD <= 0) {
+    if (
+      !topic ||
+      isNaN(numQ) ||
+      numQ < 3 ||
+      numQ > 10 ||
+      isNaN(timerD) ||
+      timerD <= 0
+    ) {
       setError(
-        "Please enter a valid topic, number of questions, and timer duration."
+        "Please enter a valid topic, 3-10 questions, and timer duration."
       );
       return;
     }
     setIsLoading(true);
     setError("");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
     try {
-      console.log(
-        "Fetching from:",
-        `${process.env.REACT_APP_API_URL}/api/generate-quiz`
-      );
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/generate-quiz`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic, count: numQ }),
-        }
-      );
+      const apiUrl = "https://quiz-nova-backend.onrender.com/api/generate-quiz"; // Adjust to your Render backend URL
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+        body: JSON.stringify({ topic, count: numQ }),
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Server error: ${res.status}`);
+      }
       const data = await res.json();
-      if (!res.ok || !data.questions) {
-        setError(data.error || "Failed to generate quiz. Try again.");
-        return;
+      if (!data.questions) {
+        throw new Error("No questions received from server");
       }
       setQuestions(data.questions);
       setQuizStarted(true);
       setUserAnswers([]);
     } catch (err) {
-      setError("Failed to generate quiz. Try again.");
-      console.error("Failed to generate quiz", err);
+      console.error("Quiz fetch error:", err.message);
+      let userErrorMessage = "Failed to generate quiz. Please try again.";
+      if (err.name === "AbortError") {
+        userErrorMessage = "The request timed out. Please try again.";
+      }
+      setError(userErrorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -117,14 +131,18 @@ const Quiz = () => {
     ) {
       setScore((s) => s + 1);
     }
-    setShowCorrect(false);
-    if (currentQuestion + 1 === questions.length) {
-      setQuizCompleted(true);
-      clearInterval(timerRef.current);
-    } else {
-      setCurrentQuestion((i) => i + 1);
-      setSelectedOption(null);
-    }
+    setShowCorrect(true);
+    setTimeout(() => {
+      setShowCorrect(false);
+      if (currentQuestion + 1 === questions.length) {
+        setQuizCompleted(true);
+        clearInterval(timerRef.current);
+      } else {
+        setCurrentQuestion((i) => i + 1);
+        setSelectedOption(null);
+        setTimer(parseInt(timerDuration) || 10);
+      }
+    }, 1000);
   };
 
   const handleRetakeQuiz = () => {
@@ -164,12 +182,13 @@ const Quiz = () => {
               id="numQuestions"
               value={numQuestions}
               onChange={(e) => setNumQuestions(e.target.value)}
-              min="1"
+              min="3"
+              max="10"
               required
               aria-label="Number of questions"
               placeholder=" "
             />
-            <label htmlFor="numQuestions">Number of Questions</label>
+            <label htmlFor="numQuestions">Number of Questions (3-10)</label>
           </div>
           <div className="input-group">
             <input
