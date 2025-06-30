@@ -58,6 +58,14 @@ Do not include code block markers (e.g., \`\`\`), comments, or any text outside 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
 
+    if (!content || typeof content !== "string") {
+      console.error("AI response missing content:", data);
+      return res.status(500).json({
+        error: "AI did not return quiz content. Please try again later.",
+        raw: data,
+      });
+    }
+
     let cleaned = content.trim();
     // Remove code block markers if present
     if (cleaned.startsWith("```")) {
