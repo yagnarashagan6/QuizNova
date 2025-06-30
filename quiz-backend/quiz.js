@@ -17,6 +17,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
+    console.log("CORS Origin Check:", origin); // Debug log
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -27,11 +28,13 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200,
 };
+
 app.use(cors(corsOptions));
 app.use(express.json());
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
+  console.log("Health check endpoint hit");
   res.json({
     status: "ok",
     version: "1.0.0",
@@ -41,12 +44,13 @@ app.get("/api/health", (req, res) => {
 
 // Quiz generation endpoint
 app.post("/api/generate-quiz", async (req, res) => {
-  console.log("📩 Quiz generation request received:", req.body);
+  console.log("Quiz generation request received:", req.body);
 
   const { topic, count } = req.body;
 
   // Input validation
   if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
+    console.log("Invalid topic:", topic);
     return res.status(400).json({
       error: "Invalid input",
       message: "Please provide a valid topic for the quiz",
@@ -55,6 +59,7 @@ app.post("/api/generate-quiz", async (req, res) => {
 
   const questionCount = parseInt(count);
   if (isNaN(questionCount) || questionCount < 3 || questionCount > 10) {
+    console.log("Invalid question count:", count);
     return res.status(400).json({
       error: "Invalid input",
       message: "Please request between 3 and 10 questions",
@@ -62,6 +67,7 @@ app.post("/api/generate-quiz", async (req, res) => {
   }
 
   if (!process.env.OPENROUTER_API_KEY) {
+    console.log("Missing OpenRouter API key");
     return res.status(500).json({ error: "Missing OpenRouter API key" });
   }
 
@@ -88,6 +94,7 @@ Example:
 Now generate ${questionCount} questions about "${topic}":`;
 
   try {
+    console.log("Sending request to OpenRouter API");
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -111,7 +118,7 @@ Now generate ${questionCount} questions about "${topic}":`;
           temperature: 0.7,
           response_format: { type: "json_object" },
         }),
-        timeout: 120000,
+        timeout: 120000, // 120-second timeout
       }
     );
 
@@ -124,12 +131,16 @@ Now generate ${questionCount} questions about "${topic}":`;
     const data = await response.json();
     let content = data.choices?.[0]?.message?.content?.trim();
 
-    if (!content) throw new Error("Empty response from AI");
+    if (!content) {
+      console.error("Empty response from OpenRouter API");
+      throw new Error("Empty response from AI");
+    }
 
     let questions;
     try {
       // Strip markdown and parse JSON
       content = content.replace(/```json\n|\n```/g, "").trim();
+      console.log("Parsed content:", content); // Debug log
       questions = JSON.parse(content);
       if (!Array.isArray(questions)) {
         throw new Error("Response is not a valid array");
@@ -185,8 +196,19 @@ Now generate ${questionCount} questions about "${topic}":`;
   }
 });
 
+// 404 Handler
 app.all("*", (req, res) => {
+  console.log("404 hit for path:", req.path); // Debug log
   res.status(404).json({ error: "Not Found" });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Express error:", err.message); // Debug log E
+  res.status(500).json({
+    error: "Internal Server Error",
+    message: err.message,
+  });
 });
 
 app.listen(PORT, () => {
