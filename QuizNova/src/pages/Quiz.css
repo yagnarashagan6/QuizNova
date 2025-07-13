@@ -609,3 +609,11 @@ p[style*="color: #f44336"] {
     border-width: 3px;
   }
 }
+
+.options-list {
+  display: flex;
+  flex-direction: column; /* Stack options vertically */
+  gap: 18px; /* Space between options */
+  align-items: stretch; /* Make buttons fill container width */
+  margin: 30px 0 20px 0;
+}
