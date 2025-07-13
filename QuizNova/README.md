@@ -1,12 +1,55 @@
-# React + Vite
+# 📚 QuizNova
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**QuizNova** is an AI-powered quiz generation web application. It allows users to input a topic, and instantly receive auto-generated quizzes based on that topic. The platform supports various question types including multiple choice (single/multiple answers) and typed input questions. Ideal for students, teachers, and lifelong learners!
 
-Currently, two official plugins are available:
+> 🚀 Live Demo: [quiz-nova-zeta.vercel.app](https://quiz-nova-zeta.vercel.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## Expanding the ESLint configuration
+- ✅ **AI-Powered Question Generation** – Generate quizzes from any topic using natural language input.
+- 📝 **Multiple Question Types** – Supports:
+  - Multiple choice (single/multiple answers)
+  - Fill-in-the-blank / typed answers
+- ⚡ **Fast & Responsive UI** – Built with React.js and styled for performance.
+- 🌐 **RESTful API Integration** – Seamless frontend-backend communication.
+- 📦 **MongoDB Atlas Integration** – Stores user-submitted responses securely.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Tech Stack
+
+### Frontend
+- **React.js** – Component-based UI library
+- **Tailwind CSS** – For sleek, responsive styling
+- **Vercel** – For deployment and hosting
+
+### Backend
+- **Node.js** – Server runtime
+- **Express.js** – Web framework
+- **OpenAI API** – For quiz generation (GPT-powered)
+- **MongoDB Atlas** – Cloud-based database
+- **Render** – Backend hosting platform
+
+💡 How It Works
+User enters a topic.
+
+Frontend sends the topic to the backend via POST request.
+
+Backend uses the OpenAI API to generate a set of quiz questions.
+
+Questions are returned and displayed on the frontend.
+
+Users take the quiz, and responses can be stored in MongoDB Atlas for analytics or review.
+
+🧠 Example Use Cases
+📖 Self-learning on new topics
+
+🧑‍🏫 Teachers preparing quick assessments
+
+👨‍💻 Developers learning AI/React/MongoDB integration
+
+
+
+## 📬 Contact
+## Creator: Yagnarashagan
+
+Feel free to connect on LinkedIn or reach out via GitHub.
+
