@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 8080;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Handle OPTIONS requests for all API routes
-app.options("*", (req, res) => {
+app.options("/", (req, res) => {
   const allowedOrigins = [
     "https://quiz-nova-zeta.vercel.app",
     "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
