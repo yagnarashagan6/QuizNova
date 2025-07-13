@@ -5,6 +5,7 @@ const Quiz = () => {
   const [topic, setTopic] = useState("");
   const [numQuestions, setNumQuestions] = useState("5");
   const [timerDuration, setTimerDuration] = useState("10");
+  const [difficulty, setDifficulty] = useState("medium");
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -64,7 +65,7 @@ const Quiz = () => {
           "Content-Type": "application/json",
         },
         signal: controller.signal,
-        body: JSON.stringify({ topic, count: numQ }),
+        body: JSON.stringify({ topic, count: numQ, difficulty }),
       });
       clearTimeout(timeoutId);
       if (!res.ok) {
@@ -203,6 +204,21 @@ const Quiz = () => {
             />
             <label htmlFor="timerDuration">Timer (seconds per question)</label>
           </div>
+          <div className="input-group select-group">
+            <select
+              id="difficulty"
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value)}
+              required
+              aria-label="Quiz difficulty"
+              className="difficulty-select"
+            >
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+            <label htmlFor="difficulty">Difficulty Level</label>
+          </div>
         </div>
         <button
           className="next-button"
@@ -235,6 +251,11 @@ const Quiz = () => {
         style={{ animation: "fadeIn 0.5s ease-in" }}
       >
         <h2 className="result-title">Quiz Completed!</h2>
+        <div className="quiz-meta">
+          <span className="difficulty-badge" data-difficulty={difficulty}>
+            {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+          </span>
+        </div>
         <div
           className="score-circle"
           style={{ animation: "bounceIn 0.8s ease" }}
@@ -282,6 +303,11 @@ const Quiz = () => {
     <div className="quiz-container" style={{ animation: "slideIn 0.3s ease" }}>
       <div className="quiz-header">
         <h2 className="quiz-title">Quiz: {topic}</h2>
+        <div className="quiz-meta">
+          <span className="difficulty-badge" data-difficulty={difficulty}>
+            {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+          </span>
+        </div>
         <div className="progress-bar">
           <div
             className="progress-fill"

@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start QuizNova Frontend",
+      "type": "shell",
+      "command": "cd c:\\QuizNova\\QuizNova && npm install && npm run dev",
+      "group": "test",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

@@ -8,6 +8,23 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Handle OPTIONS requests FIRST
+app.options("*", (req, res) => {
+  const allowedOrigins = [
+    "https://quiz-nova-zeta.vercel.app",
+    "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
+    "http://localhost:5173",
+  ];
+  const origin = req.headers.origin;
+  res.header(
+    "Access-Control-Allow-Origin",
+    allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  );
+  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.status(200).send();
+});
+
 // ✅ Add your OpenRouter API key directly here for testing (remove this in production)
 const OPENROUTER_API_KEY =
   process.env.OPENROUTER_API_KEY || "sk-your-api-key-here"; // ← Insert your real key here temporarily
@@ -17,7 +34,7 @@ app.use(
     origin: [
       "https://quiz-nova-zeta.vercel.app",
       "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
-      "http://localhost:3000",
+      "http://localhost:5173",
     ],
     methods: ["POST", "GET", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -26,16 +43,48 @@ app.use(
 
 app.use(express.json());
 
-app.post("/api/generate-quiz", async (req, res) => {
-  const { topic, count } = req.body;
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    "https://quiz-nova-zeta.vercel.app",
+    "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
+    "http://localhost:5173",
+  ];
+  const origin = req.headers.origin;
+  res.header(
+    "Access-Control-Allow-Origin",
+    allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  );
+  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
 
-  console.log("📩 Request received for topic:", topic, "Count:", count);
+app.post("/api/generate-quiz", async (req, res) => {
+  const { topic, count, difficulty = "medium" } = req.body;
+
+  console.log(
+    "📩 Request received for topic:",
+    topic,
+    "Count:",
+    count,
+    "Difficulty:",
+    difficulty
+  );
 
   if (!OPENROUTER_API_KEY) {
     return res.status(500).json({ error: "Missing OpenRouter API key." });
   }
 
-  const prompt = `Generate exactly ${count} multiple choice quiz questions on the topic "${topic}". Each question must strictly follow this format:
+  const difficultyInstructions = {
+    easy: "Use simple vocabulary and straightforward questions suitable for beginners. Focus on basic concepts and avoid complex scenarios.",
+    medium:
+      "Use moderate complexity with some challenging elements. Balance basic and advanced concepts.",
+    hard: "Create challenging questions that require deep knowledge of the subject. Use advanced terminology and complex scenarios.",
+  };
+
+  const prompt = `Generate exactly ${count} multiple choice quiz questions on the topic "${topic}" with ${difficulty} difficulty. ${difficultyInstructions[difficulty]}
+  
+Each question must strictly follow this format:
 - A question text
 - Four options prefixed with "A)", "B)", "C)", "D)"
 - One correctAnswer matching an option
@@ -64,8 +113,7 @@ Return ONLY valid JSON like:
           messages: [
             {
               role: "system",
-              content:
-                "You are a strict quiz generator that replies only in JSON.",
+              content: `You are a strict quiz generator that replies only in JSON. You adapt questions to the specified difficulty level (${difficulty}): ${difficultyInstructions[difficulty]}`,
             },
             {
               role: "user",
@@ -97,7 +145,7 @@ Return ONLY valid JSON like:
     // Clean content from backticks if needed
     let cleaned = content.trim();
     if (cleaned.startsWith("```")) {
-      cleaned = cleaned
+      cleaned
         .replace(/^```[a-zA-Z]*\n/, "")
         .replace(/```$/, "")
         .trim();
