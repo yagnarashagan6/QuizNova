@@ -281,6 +281,40 @@ body {
   box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
 }
 
+.next-button {
+  background: linear-gradient(to right, #2196f3, #64b5f6); /* blue gradient */
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(33, 150, 243, 0.15);
+  transition: background 0.3s, color 0.3s, transform 0.2s;
+}
+
+.next-button:hover,
+.next-button:focus {
+  background: linear-gradient(
+    to right,
+    #1565c0,
+    #2196f3
+  ); /* darker blue on hover */
+  color: #fff;
+  transform: translateY(-2px) scale(1.03);
+}
+
+.next-button:active {
+  background: linear-gradient(
+    to right,
+    #1976d2,
+    #2196f3
+  ); /* even darker blue when active */
+  color: #fff;
+  transform: scale(0.98);
+}
+
 @media (max-width: 768px) {
   .quiz-container {
     padding: 25px 20px;
