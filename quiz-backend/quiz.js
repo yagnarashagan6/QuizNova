@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 // Handle OPTIONS requests FIRST
-app.options("*", (req, res) => {
+app.options("/*", (req, res) => {
   const allowedOrigins = [
     "https://quiz-nova-zeta.vercel.app",
     "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
