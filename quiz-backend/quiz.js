@@ -7,9 +7,10 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-// Handle OPTIONS requests FIRST
-app.options("/", (req, res) => {
+// Handle OPTIONS requests for all API routes
+app.options("/api/*", (req, res) => {
   const allowedOrigins = [
     "https://quiz-nova-zeta.vercel.app",
     "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
@@ -24,22 +25,6 @@ app.options("/", (req, res) => {
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.status(200).send();
 });
-
-// ✅ Add your OpenRouter API key directly here for testing (remove this in production)
-const OPENROUTER_API_KEY =
-  process.env.OPENROUTER_API_KEY || "sk-your-api-key-here"; // ← Insert your real key here temporarily
-
-app.use(
-  cors({
-    origin: [
-      "https://quiz-nova-zeta.vercel.app",
-      "https://quiz-nova-eyh47gwct-yagnarashagans-projects-5a973c49.vercel.app",
-      "http://localhost:5173",
-    ],
-    methods: ["POST", "GET", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
 
 app.use(express.json());
 
@@ -145,7 +130,7 @@ Return ONLY valid JSON like:
     // Clean content from backticks if needed
     let cleaned = content.trim();
     if (cleaned.startsWith("```")) {
-      cleaned
+      cleaned = cleaned
         .replace(/^```[a-zA-Z]*\n/, "")
         .replace(/```$/, "")
         .trim();
