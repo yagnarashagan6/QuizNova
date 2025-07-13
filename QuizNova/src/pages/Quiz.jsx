@@ -222,10 +222,7 @@ const Quiz = () => {
         </div>
         <button
           className="next-button"
-          style={{
-            background: "linear-gradient(to right, #4caf50, #81c784)",
-            marginTop: "1rem",
-          }}
+          style={{ marginTop: "1rem" }}
           onClick={handleStartQuiz}
           disabled={isLoading}
         >
